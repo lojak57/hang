@@ -465,8 +465,10 @@
             tabindex="0"
             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
-            on:keydown={e => e.key === 'Escape' && (groupsExpanded = false)}
-            aria-labelledby="groups"
+            on:keydown={e => {
+              if (e.key === 'Escape') groupsExpanded = false;
+              if (e.key === 'Enter') handleGroupSelect(e.target.dataset.value);
+            }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each groups as group}
@@ -476,6 +478,7 @@
                   on:click|stopPropagation={() => selectGroup(group)}
                   role="option"
                   aria-selected={selectedGroup?.id === group.id}
+                  data-value={group.id}
                 >
                   <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">{group.name}</div>
@@ -536,8 +539,10 @@
             tabindex="0"
             class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
-            on:keydown={e => e.key === 'Escape' && (individualsExpanded = false)}
-            aria-labelledby="individuals"
+            on:keydown={e => {
+              if (e.key === 'Escape') individualsExpanded = false;
+              if (e.key === 'Enter') handleFriendSelect(e.target.dataset.value);
+            }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each friends as friend}
@@ -551,6 +556,7 @@
                     checked={selectedFriends.includes(friend.id)}
                     on:change={() => toggleFriendSelection(friend.id)}
                     class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    data-value={friend.id}
                   />
                 </label>
               {/each}
@@ -571,6 +577,7 @@
             type="date"
             bind:value={dateRange.start}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            required
           />
         </div>
         
@@ -581,6 +588,7 @@
             type="date"
             bind:value={dateRange.end}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            required
           />
         </div>
 
@@ -805,29 +813,29 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               bind:value={pollDeadline}
               on:focus={() => !pollDeadline && setPollDeadline()}
-            >
+            />
           </div>
 
           <div class="flex items-center">
             <input
-              id="autoFinalize-step3"
               type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+              id="autoFinalize"
               bind:checked={autoFinalize}
-            >
-            <label for="autoFinalize-step3" class="ml-2 block text-sm text-gray-900">
+              class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label for="autoFinalize" class="ml-2 text-sm text-gray-900">
               Automatically finalize at deadline with most voted time
             </label>
           </div>
 
           <div class="flex items-center">
             <input
-              id="notifyReminders-step3"
               type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+              id="notifyReminders"
               bind:checked={notifyReminders}
-            >
-            <label for="notifyReminders-step3" class="ml-2 block text-sm text-gray-900">
+              class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label for="notifyReminders" class="ml-2 text-sm text-gray-900">
               Send reminders to friends who haven't voted
             </label>
           </div>
