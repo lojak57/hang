@@ -1,4 +1,9 @@
 import { writable } from 'svelte/store';
-import type { User } from '@supabase/supabase-js';
+
+interface User {
+    id: string;
+    email?: string;
+    name?: string;
+}
 
 export const user = writable<User | null>(null);

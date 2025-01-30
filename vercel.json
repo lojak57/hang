@@ -1,7 +1,6 @@
 {
-  // Vercel configuration for SvelteKit app
+  "framework": "sveltekit",
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "sveltekit"
+  "devCommand": "npm run dev"
 }

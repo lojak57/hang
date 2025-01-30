@@ -1,43 +1,43 @@
 <script>
   import { onMount } from 'svelte';
-  import { supabase } from '$lib/utils/supabase';
   import { user } from '$lib/stores/auth';
-  
+
   let currentDate = new Date();
   let selectedDates = new Set();
   let calendar = [];
-  
+  let userAvailability = {};
+
   // Get the first day of the month
   function getFirstDayOfMonth(date) {
     return new Date(date.getFullYear(), date.getMonth(), 1);
   }
-  
+
   // Get the number of days in the month
   function getDaysInMonth(date) {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   }
-  
+
   // Generate calendar data
   function generateCalendar() {
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInMonth = getDaysInMonth(currentDate);
     const startingDay = firstDay.getDay(); // 0 = Sunday
-    
+
     calendar = [];
     let week = new Array(7).fill(null);
-    
+
     // Add empty cells for days before the first of the month
     for (let i = 0; i < startingDay; i++) {
       week[i] = null;
     }
-    
+
     // Fill in the days of the month
     let dayCounter = 1;
     for (let i = startingDay; i < 7; i++) {
       week[i] = dayCounter++;
     }
     calendar.push(week);
-    
+
     // Fill in the rest of the weeks
     while (dayCounter <= daysInMonth) {
       week = new Array(7).fill(null);
@@ -47,75 +47,65 @@
       calendar.push(week);
     }
   }
-  
+
   // Toggle date selection
-  async function toggleDate(day) {
+  function toggleDate(day) {
     if (!day || !$user) return;
-    
+
     const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    
+
     if (selectedDates.has(dateStr)) {
       selectedDates.delete(dateStr);
     } else {
       selectedDates.add(dateStr);
     }
-    
-    // Update availability in Supabase
-    const { error } = await supabase
-      .from('availability')
-      .upsert({
-        user_id: $user.id,
-        date: dateStr,
-        is_available: !selectedDates.has(dateStr)
-      });
-      
-    if (error) {
-      console.error('Error updating availability:', error);
+
+    // Update availability in localStorage
+    const storedAvailability = localStorage.getItem(`availability_${$user.id}`);
+    if (storedAvailability) {
+      userAvailability = JSON.parse(storedAvailability);
+    } else {
+      userAvailability = {};
     }
+
+    if (!userAvailability[dateStr]) {
+      userAvailability[dateStr] = true;
+    } else {
+      userAvailability[dateStr] = !userAvailability[dateStr];
+    }
+
+    localStorage.setItem(`availability_${$user.id}`, JSON.stringify(userAvailability));
   }
-  
+
   // Load user's availability for the current month
-  async function loadAvailability() {
-    if (!$user) return;
-    
-    const startOfMonth = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-01`;
-    const endOfMonth = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${getDaysInMonth(currentDate).toString().padStart(2, '0')}`;
-    
-    const { data, error } = await supabase
-      .from('availability')
-      .select('date')
-      .eq('user_id', $user.id)
-      .eq('is_available', true)
-      .gte('date', startOfMonth)
-      .lte('date', endOfMonth);
-      
-    if (error) {
-      console.error('Error loading availability:', error);
-      return;
+  onMount(async () => {
+    // Load availability from localStorage
+    const storedAvailability = localStorage.getItem(`availability_${$user.id}`);
+    if (storedAvailability) {
+      userAvailability = JSON.parse(storedAvailability);
     }
-    
-    selectedDates = new Set(data.map(d => d.date));
-  }
-  
+
+    generateCalendar();
+
+    // Load selected dates from availability
+    for (const dateStr in userAvailability) {
+      if (userAvailability[dateStr]) {
+        selectedDates.add(dateStr);
+      }
+    }
+  });
+
   // Navigation functions
   function previousMonth() {
     currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
     generateCalendar();
-    loadAvailability();
   }
-  
+
   function nextMonth() {
     currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
     generateCalendar();
-    loadAvailability();
   }
-  
-  // Initialize calendar
-  onMount(() => {
-    generateCalendar();
-    loadAvailability();
-  });
-  
+
   $: monthName = currentDate.toLocaleString('default', { month: 'long' });
   $: year = currentDate.getFullYear();
 </script>
@@ -136,12 +126,12 @@
       →
     </button>
   </div>
-  
+
   <div class="grid grid-cols-7 gap-1">
     {#each ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as day}
       <div class="text-center py-2 text-gray-600 font-medium">{day}</div>
     {/each}
-    
+
     {#each calendar as week}
       {#each week as day}
         {#if day !== null}

@@ -51,10 +51,15 @@ A modern web application built with SvelteKit that helps friends coordinate and 
 
 ### Deployment
 
+This app is configured for deployment on Vercel:
+
 1. Push your code to GitHub
-2. Connect your GitHub repository to Vercel
-3. Configure environment variables in Vercel dashboard
-4. Deploy!
+2. Visit [Vercel](https://vercel.com)
+3. Create a new project
+4. Import your GitHub repository
+5. Deploy
+
+The app uses Supabase for data persistence, so no additional configuration is needed.
 
 ## Development
 
