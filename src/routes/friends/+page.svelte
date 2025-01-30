@@ -4,7 +4,6 @@
   let friends = [];
   let newFriendName = '';
   let newFriendPhone = '';
-  let newFriendEmail = '';
   let shareUrl = '';
   let editingFriend = null;
   let showEditModal = false;
@@ -15,11 +14,10 @@
     const savedFriends = localStorage.getItem('friends');
     if (savedFriends) {
       friends = JSON.parse(savedFriends);
-      // Add phone and email fields to existing friends if they don't have it
+      // Add phone field to existing friends if they don't have it
       friends = friends.map(friend => ({
         ...friend,
         phone: friend.phone || '',
-        email: friend.email || '',
       }));
       localStorage.setItem('friends', JSON.stringify(friends));
     }
@@ -65,7 +63,6 @@
       id: generateUserId(),
       name: newFriendName,
       phone: newFriendPhone,
-      email: newFriendEmail,
       dateAdded: new Date().toISOString()
     };
     
@@ -74,7 +71,6 @@
     
     newFriendName = '';
     newFriendPhone = '';
-    newFriendEmail = '';
     formError = '';
   }
   
@@ -128,7 +124,7 @@
   <!-- Add Friend Form -->
   <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Add a Friend</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label for="friend-name-input" class="block text-sm font-medium text-gray-700 mb-1">
           Name <span class="text-red-500">*</span>
@@ -153,17 +149,6 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           required
           aria-required="true"
-        />
-      </div>
-      <div>
-        <label for="friend-email-input" class="block text-sm font-medium text-gray-700 mb-1">
-          Email (optional)
-        </label>
-        <input
-          id="friend-email-input"
-          type="email"
-          bind:value={newFriendEmail}
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
     </div>
@@ -221,14 +206,6 @@
                   </svg>
                   {formatPhoneNumber(friend.phone)}
                 </div>
-                {#if friend.email}
-                  <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884L2 7v8a2 2 0 002 2h14a2 2 0 002-2V9.882l-8 3.998z" />
-                    </svg>
-                    {friend.email}
-                  </div>
-                {/if}
               </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -303,17 +280,6 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
             aria-required="true"
-          />
-        </div>
-        <div>
-          <label for="editFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
-            Email (optional)
-          </label>
-          <input
-            id="editFriendEmail"
-            type="email"
-            bind:value={editingFriend.email}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>

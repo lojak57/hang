@@ -14,17 +14,13 @@
   let suggestedSlots = [];
   let selectedSlot = null;
   let step = 1;
-  let isSending = false;
-  let emailStatus = '';
   let activity = '';
   let location = '';
   let locationDetails = '';
   let description = '';
   let user;
   let duration = '2'; // hours
-  let pollDeadline = '';
   let autoFinalize = false;
-  let notifyReminders = false;
   let finalizing = false;
   let hangName = '';
   let hangDescription = '';
@@ -319,7 +315,6 @@
       friends: selectedFriends,
       dateRange,
       duration,
-      pollDeadline,
       autoFinalize
     };
 
@@ -367,13 +362,6 @@
     return scoredSlots.sort((a, b) => b.finalScore - a.finalScore)[0];
   }
 
-  function setPollDeadline() {
-    // Default to 24 hours from now
-    const deadline = new Date();
-    deadline.setHours(deadline.getHours() + 24);
-    pollDeadline = deadline.toISOString().slice(0, 16); // Format for datetime-local input
-  }
-
   function finalizeHang() {
     finalizing = true;
     const recommendedSlot = getRecommendedSlot();
@@ -390,9 +378,7 @@
       selectedSlot: recommendedSlot,
       createdAt: new Date().toISOString(),
       status: autoFinalize ? 'pending' : 'finalized',
-      pollDeadline: new Date(pollDeadline).toISOString(),
-      autoFinalize,
-      notifyReminders
+      autoFinalize
     };
     
     // Save to localStorage
@@ -503,7 +489,7 @@
                 <label class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
                   <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">{friend.name}</div>
-                    <div class="text-xs text-gray-500">{friend.email}</div>
+                    <div class="text-xs text-gray-500">{friend.name}</div>
                   </div>
                   <input
                     type="checkbox"
@@ -761,20 +747,6 @@
 
         <!-- Poll Settings -->
         <div class="space-y-4 pt-4">
-          <div>
-            <label for="pollDeadline" class="block text-sm font-medium text-gray-700 mb-1">
-              Poll Deadline
-            </label>
-            <input
-              id="pollDeadline"
-              type="datetime-local"
-              bind:value={pollDeadline}
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              required
-              aria-required="true"
-            />
-          </div>
-
           <div class="flex items-center">
             <input
               id="autoFinalize"
@@ -784,18 +756,6 @@
             >
             <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
               Automatically finalize at deadline with most voted time
-            </label>
-          </div>
-
-          <div class="flex items-center">
-            <input
-              id="notifyReminders"
-              type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              bind:checked={notifyReminders}
-            >
-            <label for="notifyReminders" class="ml-2 block text-sm text-gray-900">
-              Send reminders to friends who haven't voted
             </label>
           </div>
         </div>
@@ -812,7 +772,7 @@
         <button
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           on:click={handleSubmit}
-          disabled={!pollDeadline || finalizing}
+          disabled={finalizing}
         >
           {finalizing ? 'Creating Hang...' : 'Create Hang'}
         </button>
