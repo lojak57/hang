@@ -150,11 +150,11 @@
     <h2 class="text-xl font-semibold mb-4">Add a Friend</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label for="newFriendName" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
           Name <span class="text-red-500">*</span>
         </label>
         <input
-          id="newFriendName"
+          id="name"
           type="text"
           bind:value={newFriendName}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -162,11 +162,11 @@
         />
       </div>
       <div>
-        <label for="newFriendPhone" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
           Phone Number <span class="text-red-500">*</span>
         </label>
         <input
-          id="newFriendPhone"
+          id="phone"
           type="tel"
           bind:value={newFriendPhone}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -174,11 +174,11 @@
         />
       </div>
       <div>
-        <label for="newFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
           Email (optional)
         </label>
         <input
-          id="newFriendEmail"
+          id="email"
           type="email"
           bind:value={newFriendEmail}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -295,11 +295,11 @@
 
       <div class="space-y-4">
         <div>
-          <label for="editFriendName" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editName" class="block text-sm font-medium text-gray-700 mb-1">
             Name <span class="text-red-500">*</span>
           </label>
           <input
-            id="editFriendName"
+            id="editName"
             type="text"
             bind:value={editingFriend.name}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -307,11 +307,11 @@
           />
         </div>
         <div>
-          <label for="editFriendPhone" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editPhone" class="block text-sm font-medium text-gray-700 mb-1">
             Phone Number <span class="text-red-500">*</span>
           </label>
           <input
-            id="editFriendPhone"
+            id="editPhone"
             type="tel"
             bind:value={editingFriend.phone}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -319,11 +319,11 @@
           />
         </div>
         <div>
-          <label for="editFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1">
             Email (optional)
           </label>
           <input
-            id="editFriendEmail"
+            id="editEmail"
             type="email"
             bind:value={editingFriend.email}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"

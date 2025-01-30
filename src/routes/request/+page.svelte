@@ -466,6 +466,7 @@
             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
             on:keydown={e => e.key === 'Escape' && (groupsExpanded = false)}
+            aria-labelledby="groups"
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each groups as group}
@@ -536,6 +537,7 @@
             class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
             on:keydown={e => e.key === 'Escape' && (individualsExpanded = false)}
+            aria-labelledby="individuals"
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each friends as friend}

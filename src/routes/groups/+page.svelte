@@ -105,12 +105,10 @@
     <!-- Group Cards -->
     <div class="grid grid-cols-1 gap-6 mb-8">
       {#each groups as group}
-        <div
-          role="button"
-          tabindex="0"
-          class="relative bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 cursor-pointer transition-colors duration-200"
+        <button
+          type="button"
+          class="relative w-full text-left bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 cursor-pointer transition-colors duration-200"
           on:click={() => handleGroupClick(group)}
-          on:keydown={e => e.key === 'Enter' && handleGroupClick(group)}
         >
           <div class="flex justify-between items-start mb-4">
             <div>
@@ -156,7 +154,7 @@
               {/each}
             </div>
           </div>
-        </div>
+        </button>
       {/each}
     </div>
 
@@ -177,6 +175,7 @@
             placeholder="e.g., College Friends, Work Crew"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
+            aria-labelledby="groupName"
           />
         </div>
 
@@ -188,6 +187,7 @@
             bind:value={newGroupDescription}
             placeholder="e.g., Friends from university"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            aria-labelledby="groupDesc"
           />
         </div>
 
@@ -206,10 +206,11 @@
                     checked={selectedFriends.includes(friend.id)}
                     on:change={() => toggleFriendSelection(friend.id)}
                     class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    aria-labelledby="friend-{{friend.id}}"
                   />
                 </div>
                 <div class="ml-3 min-w-0 flex-1">
-                  <div class="text-sm font-medium text-gray-700">{friend.name}</div>
+                  <div class="text-sm font-medium text-gray-700" id="friend-{{friend.id}}">{friend.name}</div>
                   <div class="text-sm text-gray-500">{friend.email}</div>
                 </div>
               </label>
