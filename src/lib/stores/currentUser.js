@@ -5,7 +5,6 @@ const storedUser = localStorage.getItem('currentUser');
 const defaultUser = {
     id: crypto.randomUUID(),
     name: 'You',
-    email: '',
     phone: ''
 };
 

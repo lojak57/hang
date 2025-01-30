@@ -77,9 +77,6 @@
                   <p class="text-sm font-medium text-gray-900 truncate">
                     {member.name}
                   </p>
-                  <p class="text-sm text-gray-500 truncate">
-                    {member.email}
-                  </p>
                 </div>
                 <div class="flex-shrink-0">
                   <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(member.status)}`}>

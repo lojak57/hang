@@ -43,7 +43,6 @@
       {
         id: user.id,
         name: user.name,
-        email: user.email,
         status: 'owner'
       }
     ];
@@ -53,7 +52,6 @@
       members.push({
         id: friend.id,
         name: friend.name,
-        email: friend.email,
         status: 'member'
       });
     }
