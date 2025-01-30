@@ -1,14 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import { sendInviteEmail } from '$lib/emailService';
   
   let friends = [];
   let newFriendName = '';
-  let newFriendEmail = '';
   let newFriendPhone = '';
   let shareUrl = '';
-  let emailStatus = '';
-  let isSending = false;
   let editingFriend = null;
   let showEditModal = false;
   let formError = '';
@@ -22,7 +18,6 @@
       friends = friends.map(friend => ({
         ...friend,
         phone: friend.phone || '',
-        email: friend.email || '' // Make email optional
       }));
       localStorage.setItem('friends', JSON.stringify(friends));
     }
@@ -67,7 +62,6 @@
     const newFriend = {
       id: generateUserId(),
       name: newFriendName,
-      email: newFriendEmail || '',
       phone: newFriendPhone,
       dateAdded: new Date().toISOString()
     };
@@ -75,25 +69,7 @@
     friends = [...friends, newFriend];
     localStorage.setItem('friends', JSON.stringify(friends));
     
-    // Only send invite email if email is provided
-    if (newFriend.email) {
-      isSending = true;
-      const result = await sendInviteEmail(
-        newFriend.email,
-        'Your Name',
-        shareUrl
-      );
-      isSending = false;
-      
-      if (result.success) {
-        emailStatus = `Invite sent to ${newFriend.email}!`;
-      } else {
-        emailStatus = `Failed to send invite: ${result.error}`;
-      }
-    }
-    
     newFriendName = '';
-    newFriendEmail = '';
     newFriendPhone = '';
     formError = '';
   }
@@ -148,7 +124,7 @@
   <!-- Add Friend Form -->
   <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
     <h2 class="text-xl font-semibold mb-4">Add a Friend</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label for="newFriendName" class="block text-sm font-medium text-gray-700 mb-1">
           Name <span class="text-red-500">*</span>
@@ -159,6 +135,7 @@
           bind:value={newFriendName}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           required
+          aria-required="true"
         />
       </div>
       <div>
@@ -171,17 +148,7 @@
           bind:value={newFriendPhone}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           required
-        />
-      </div>
-      <div>
-        <label for="newFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
-          Email (optional)
-        </label>
-        <input
-          id="newFriendEmail"
-          type="email"
-          bind:value={newFriendEmail}
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          aria-required="true"
         />
       </div>
     </div>
@@ -190,17 +157,11 @@
         {formError}
       </div>
     {/if}
-    {#if emailStatus}
-      <div class="mt-2 text-sm" class:text-green-600={emailStatus.includes('sent')} class:text-red-600={emailStatus.includes('Failed')}>
-        {emailStatus}
-      </div>
-    {/if}
     <button
       on:click={addFriend}
-      disabled={isSending}
-      class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+      class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
     >
-      {isSending ? 'Sending Invite...' : 'Add Friend'}
+      Add Friend
     </button>
   </div>
   
@@ -241,15 +202,6 @@
                   </svg>
                   {formatPhoneNumber(friend.phone)}
                 </div>
-                {#if friend.email}
-                  <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                    {friend.email}
-                  </div>
-                {/if}
               </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -304,6 +256,7 @@
             bind:value={editingFriend.name}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
+            aria-required="true"
           />
         </div>
         <div>
@@ -316,17 +269,7 @@
             bind:value={editingFriend.phone}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
-          />
-        </div>
-        <div>
-          <label for="editFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
-            Email (optional)
-          </label>
-          <input
-            id="editFriendEmail"
-            type="email"
-            bind:value={editingFriend.email}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            aria-required="true"
           />
         </div>
       </div>

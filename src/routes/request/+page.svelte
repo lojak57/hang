@@ -424,39 +424,23 @@
     <div class="space-y-4 mb-8">
       <!-- Groups Dropdown -->
       <div class="relative">
-        <label for="groups" class="block text-sm font-medium text-gray-700 mb-1">Groups</label>
+        <label for="groupsButton" class="block text-sm font-medium text-gray-700 mb-1">Groups</label>
         <button
           type="button"
-          id="groups"
-          aria-haspopup="true"
+          id="groupsButton"
+          class="relative w-full bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          aria-haspopup="listbox"
           aria-expanded={groupsExpanded}
-          class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left flex justify-between items-center hover:border-gray-400 transition-colors"
-          on:click={() => {
-            groupsExpanded = !groupsExpanded;
-            individualsExpanded = false; // Close other dropdown
-          }}
+          on:click|stopPropagation={() => groupsExpanded = !groupsExpanded}
         >
-          <div class="flex items-center">
-            <span class="text-sm font-medium text-gray-900 mr-2">Groups</span>
-            {#if selectedGroup}
-              <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                {selectedGroup.name}
-              </span>
-            {/if}
-          </div>
-          <svg
-            class="w-5 h-5 text-gray-400 transform transition-transform duration-200 {groupsExpanded ? 'rotate-180' : ''}"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <span class="block truncate">
+            {selectedGroup ? selectedGroup.name : 'Select a group'}
+          </span>
+          <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </span>
         </button>
 
         {#if groupsExpanded}
@@ -467,70 +451,60 @@
             on:click|stopPropagation
             on:keydown={e => {
               if (e.key === 'Escape') groupsExpanded = false;
-              if (e.key === 'Enter') handleGroupSelect(e.target.dataset.value);
+              if (e.key === 'Enter') {
+                const selectedId = e.target.closest('[role="option"]')?.dataset.value;
+                if (selectedId) {
+                  const group = groups.find(g => g.id === selectedId);
+                  if (group) selectGroup(group);
+                }
+              }
             }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each groups as group}
-                <button
-                  type="button"
-                  class="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg {selectedGroup?.id === group.id ? 'bg-blue-50' : ''}"
+                <div
+                  class="flex items-center px-3 py-2 rounded hover:bg-gray-100 cursor-pointer"
                   on:click|stopPropagation={() => selectGroup(group)}
                   role="option"
                   aria-selected={selectedGroup?.id === group.id}
                   data-value={group.id}
+                  tabindex="0"
                 >
                   <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">{group.name}</div>
-                    <div class="text-xs text-gray-500">{group.members.length} members</div>
+                    <div class="text-sm text-gray-500">{group.members?.length || 0} members</div>
                   </div>
                   {#if selectedGroup?.id === group.id}
-                    <svg class="w-5 h-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                     </svg>
                   {/if}
-                </button>
+                </div>
               {/each}
             </div>
           </div>
         {/if}
       </div>
 
-      <!-- Individuals Dropdown -->
+      <!-- Individual Friends -->
       <div class="relative">
-        <label for="individuals" class="block text-sm font-medium text-gray-700 mb-1">Individuals</label>
+        <label for="friendsButton" class="block text-sm font-medium text-gray-700 mb-1">Individual Friends</label>
         <button
           type="button"
-          id="individuals"
-          aria-haspopup="true"
+          id="friendsButton"
+          class="relative w-full bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          aria-haspopup="listbox"
           aria-expanded={individualsExpanded}
-          class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left flex justify-between items-center hover:border-gray-400 transition-colors"
-          on:click={() => {
-            individualsExpanded = !individualsExpanded;
-            groupsExpanded = false; // Close other dropdown
-          }}
+          on:click|stopPropagation={() => individualsExpanded = !individualsExpanded}
         >
-          <div class="flex items-center">
-            <span class="text-sm font-medium text-gray-900 mr-2">Individuals</span>
-            {#if selectedCount > 0}
-              <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                {selectedCount} selected
-              </span>
-            {/if}
-          </div>
-          <svg
-            class="w-5 h-5 text-gray-400 transform transition-transform duration-200 {individualsExpanded ? 'rotate-180' : ''}"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clip-rule="evenodd"
-            />
-          </svg>
+          <span class="block truncate">
+            {selectedCount ? `${selectedCount} friend${selectedCount === 1 ? '' : 's'} selected` : 'Select friends'}
+          </span>
+          <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </span>
         </button>
 
         {#if individualsExpanded}
@@ -541,7 +515,10 @@
             on:click|stopPropagation
             on:keydown={e => {
               if (e.key === 'Escape') individualsExpanded = false;
-              if (e.key === 'Enter') handleFriendSelect(e.target.dataset.value);
+              if (e.key === 'Enter') {
+                const selectedId = e.target.closest('[role="option"]')?.dataset.value;
+                if (selectedId) toggleFriendSelection(selectedId);
+              }
             }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
