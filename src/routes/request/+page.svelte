@@ -444,15 +444,17 @@
     <div class="space-y-4 mb-8">
       <!-- Groups Dropdown -->
       <div class="relative">
+        <label for="groups" class="block text-sm font-medium text-gray-700 mb-1">Groups</label>
         <button
           type="button"
+          id="groups"
+          aria-haspopup="true"
+          aria-expanded={groupsExpanded}
           class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left flex justify-between items-center hover:border-gray-400 transition-colors"
           on:click={() => {
             groupsExpanded = !groupsExpanded;
             individualsExpanded = false; // Close other dropdown
           }}
-          aria-haspopup="true"
-          aria-expanded={groupsExpanded}
         >
           <div class="flex items-center">
             <span class="text-sm font-medium text-gray-900 mr-2">Groups</span>
@@ -512,15 +514,17 @@
 
       <!-- Individuals Dropdown -->
       <div class="relative">
+        <label for="individuals" class="block text-sm font-medium text-gray-700 mb-1">Individuals</label>
         <button
           type="button"
+          id="individuals"
+          aria-haspopup="true"
+          aria-expanded={individualsExpanded}
           class="w-full bg-white border border-gray-300 rounded-lg py-3 px-4 text-left flex justify-between items-center hover:border-gray-400 transition-colors"
           on:click={() => {
             individualsExpanded = !individualsExpanded;
             groupsExpanded = false; // Close other dropdown
           }}
-          aria-haspopup="true"
-          aria-expanded={individualsExpanded}
         >
           <div class="flex items-center">
             <span class="text-sm font-medium text-gray-900 mr-2">Individuals</span>

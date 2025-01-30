@@ -173,8 +173,9 @@
           <input
             id="groupName"
             type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             bind:value={newGroupName}
+            placeholder="e.g., College Friends, Work Crew"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
           />
         </div>
@@ -184,14 +185,19 @@
           <input
             id="groupDesc"
             type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             bind:value={newGroupDescription}
+            placeholder="e.g., Friends from university"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div>
-          <label for="groupFriends" class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
-          <div id="groupFriends" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <label id="groupFriendsLabel" class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
+          <div 
+            role="group" 
+            aria-labelledby="groupFriendsLabel"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+          >
             {#each friends as friend}
               <label class="relative flex items-center py-2 cursor-pointer hover:bg-gray-50 rounded-lg px-3">
                 <div class="flex items-center h-5">
