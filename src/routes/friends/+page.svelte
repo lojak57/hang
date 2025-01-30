@@ -167,17 +167,21 @@
   
   <!-- Share Calendar -->
   <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-    <h2 class="text-xl font-semibold mb-4">Share Your Calendar</h2>
+    <h2 id="shareCalendarTitle" class="text-xl font-semibold mb-4">Share Your Calendar</h2>
     <div class="flex items-center space-x-4">
+      <label for="shareUrlInput" class="sr-only">Share URL</label>
       <input
+        id="shareUrlInput"
         type="text"
         readonly
         value={shareUrl}
         class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
+        aria-label="Calendar share URL"
       >
       <button
         on:click={copyShareUrl}
         class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        aria-label="Copy share link"
       >
         Copy Link
       </button>
@@ -231,10 +235,15 @@
 
 <!-- Edit Friend Modal -->
 {#if showEditModal && editingFriend}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+  <div 
+    role="dialog"
+    aria-labelledby="editFriendTitle"
+    aria-modal="true"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+  >
     <div class="bg-white rounded-xl max-w-lg w-full p-6">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold">Edit Friend</h2>
+        <h2 id="editFriendTitle" class="text-xl font-semibold">Edit Friend</h2>
         <button
           on:click={closeEditModal}
           class="text-gray-500 hover:text-gray-700"
