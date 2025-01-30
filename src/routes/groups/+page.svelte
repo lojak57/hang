@@ -9,8 +9,10 @@
   });
 
   let groups = [];
-  let newGroupName = '';
-  let newGroupDescription = '';
+  let newGroup = {
+    name: '',
+    description: ''
+  };
   let selectedFriends = [];
   let friends = [];
   let editingGroup = null;
@@ -32,7 +34,7 @@
   });
 
   function createGroup() {
-    if (!newGroupName.trim()) {
+    if (!newGroup.name.trim()) {
       alert('Please enter a group name');
       return;
     }
@@ -47,32 +49,30 @@
     ];
 
     // Add selected friends
-    for (let friendId of selectedFriends) {
-      const friend = friends.find(f => f.id === friendId);
-      if (friend) {
-        members.push({
-          id: friend.id,
-          name: friend.name,
-          email: friend.email,
-          status: 'member'
-        });
-      }
+    for (let friend of selectedFriends) {
+      members.push({
+        id: friend.id,
+        name: friend.name,
+        email: friend.email,
+        status: 'member'
+      });
     }
 
-    const newGroup = {
-      id: crypto.randomUUID(),
-      name: newGroupName.trim(),
-      description: newGroupDescription,
+    const newGroupId = crypto.randomUUID();
+    const newGroupData = {
+      id: newGroupId,
+      name: newGroup.name.trim(),
+      description: newGroup.description,
       members,
       createdAt: new Date().toISOString()
     };
 
-    groups = [...groups, newGroup];
+    groups = [...groups, newGroupData];
     localStorage.setItem('friendGroups', JSON.stringify(groups));
 
     // Reset form
-    newGroupName = '';
-    newGroupDescription = '';
+    newGroup.name = '';
+    newGroup.description = '';
     selectedFriends = [];
   }
 
@@ -86,12 +86,12 @@
     localStorage.setItem('friendGroups', JSON.stringify(groups));
   }
 
-  function toggleFriendSelection(friendId) {
-    const index = selectedFriends.indexOf(friendId);
+  function toggleFriendSelection(friend) {
+    const index = selectedFriends.indexOf(friend);
     if (index === -1) {
-      selectedFriends = [...selectedFriends, friendId];
+      selectedFriends = [...selectedFriends, friend];
     } else {
-      selectedFriends = selectedFriends.filter(id => id !== friendId);
+      selectedFriends = selectedFriends.filter(f => f !== friend);
     }
   }
 </script>
@@ -109,6 +109,7 @@
           type="button"
           class="relative w-full text-left bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 cursor-pointer transition-colors duration-200"
           on:click={() => handleGroupClick(group)}
+          aria-label="View group {group.name}"
         >
           <div class="flex justify-between items-start mb-4">
             <div>
@@ -164,55 +165,42 @@
         <h2 class="text-xl font-semibold text-gray-900">Create New Group</h2>
         <div class="h-px flex-1 bg-gray-200 mx-4"></div>
       </div>
-      
+
       <div class="space-y-4">
         <div>
           <label for="groupName" class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
           <input
             id="groupName"
             type="text"
-            bind:value={newGroupName}
-            placeholder="e.g., College Friends, Work Crew"
+            bind:value={newGroup.name}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
-            aria-labelledby="groupName"
+            aria-required="true"
           />
         </div>
 
         <div>
-          <label for="groupDesc" class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+          <label for="groupDescription" class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
           <input
-            id="groupDesc"
+            id="groupDescription"
             type="text"
-            bind:value={newGroupDescription}
-            placeholder="e.g., Friends from university"
+            bind:value={newGroup.description}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            aria-labelledby="groupDesc"
           />
         </div>
 
         <div>
-          <label id="groupFriendsLabel" class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
-          <div 
-            role="group" 
-            aria-labelledby="groupFriendsLabel"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
-          >
+          <label for="friendSelect" class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {#each friends as friend}
-              <label class="relative flex items-center py-2 cursor-pointer hover:bg-gray-50 rounded-lg px-3">
-                <div class="flex items-center h-5">
-                  <input
-                    type="checkbox"
-                    checked={selectedFriends.includes(friend.id)}
-                    on:change={() => toggleFriendSelection(friend.id)}
-                    class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    aria-labelledby="friend-{{friend.id}}"
-                  />
-                </div>
-                <div class="ml-3 min-w-0 flex-1">
-                  <div class="text-sm font-medium text-gray-700" id="friend-{{friend.id}}">{friend.name}</div>
-                  <div class="text-sm text-gray-500">{friend.email}</div>
-                </div>
+              <label class="relative flex items-center p-3 rounded-lg border border-gray-200">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  bind:group={selectedFriends}
+                  value={friend}
+                />
+                <span class="ml-3 text-sm font-medium text-gray-900">{friend.name}</span>
               </label>
             {/each}
           </div>

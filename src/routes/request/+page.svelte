@@ -426,45 +426,32 @@
       <div class="relative">
         <label for="groupsButton" class="block text-sm font-medium text-gray-700 mb-1">Groups</label>
         <button
-          type="button"
           id="groupsButton"
-          class="relative w-full bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          type="button"
+          class="relative w-full bg-white border border-gray-300 rounded-lg shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           aria-haspopup="listbox"
           aria-expanded={groupsExpanded}
-          on:click|stopPropagation={() => groupsExpanded = !groupsExpanded}
+          on:click={() => groupsExpanded = !groupsExpanded}
         >
           <span class="block truncate">
             {selectedGroup ? selectedGroup.name : 'Select a group'}
-          </span>
-          <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
           </span>
         </button>
 
         {#if groupsExpanded}
           <div 
             role="listbox"
-            tabindex="0"
             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
             on:keydown={e => {
               if (e.key === 'Escape') groupsExpanded = false;
-              if (e.key === 'Enter') {
-                const selectedId = e.target.closest('[role="option"]')?.dataset.value;
-                if (selectedId) {
-                  const group = groups.find(g => g.id === selectedId);
-                  if (group) selectGroup(group);
-                }
-              }
             }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each groups as group}
                 <div
                   class="flex items-center px-3 py-2 rounded hover:bg-gray-100 cursor-pointer"
-                  on:click|stopPropagation={() => selectGroup(group)}
+                  on:click={() => selectGroup(group)}
                   role="option"
                   aria-selected={selectedGroup?.id === group.id}
                   data-value={group.id}
@@ -490,35 +477,25 @@
       <div class="relative">
         <label for="friendsButton" class="block text-sm font-medium text-gray-700 mb-1">Individual Friends</label>
         <button
-          type="button"
           id="friendsButton"
-          class="relative w-full bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          type="button"
+          class="relative w-full bg-white border border-gray-300 rounded-lg shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           aria-haspopup="listbox"
           aria-expanded={individualsExpanded}
-          on:click|stopPropagation={() => individualsExpanded = !individualsExpanded}
+          on:click={() => individualsExpanded = !individualsExpanded}
         >
           <span class="block truncate">
-            {selectedCount ? `${selectedCount} friend${selectedCount === 1 ? '' : 's'} selected` : 'Select friends'}
-          </span>
-          <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
+            {selectedFriends.length > 0 ? `${selectedFriends.length} friend${selectedFriends.length === 1 ? '' : 's'} selected` : 'Select friends'}
           </span>
         </button>
 
         {#if individualsExpanded}
           <div 
             role="listbox"
-            tabindex="0"
             class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
             on:keydown={e => {
               if (e.key === 'Escape') individualsExpanded = false;
-              if (e.key === 'Enter') {
-                const selectedId = e.target.closest('[role="option"]')?.dataset.value;
-                if (selectedId) toggleFriendSelection(selectedId);
-              }
             }}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
@@ -555,6 +532,7 @@
             bind:value={dateRange.start}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
+            aria-required="true"
           />
         </div>
         
@@ -566,15 +544,18 @@
             bind:value={dateRange.end}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             required
+            aria-required="true"
           />
         </div>
 
         <div>
-          <label for="hangDuration" class="block text-sm font-medium text-gray-700 mb-1">How long do you want to Hang? (hours)</label>
+          <label for="duration" class="block text-sm font-medium text-gray-700 mb-1">How long do you want to Hang? (hours)</label>
           <select
-            id="hangDuration"
+            id="duration"
             bind:value={duration}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            required
+            aria-required="true"
           >
             <option value="1">1 hour</option>
             <option value="2">2 hours</option>
@@ -787,32 +768,33 @@
             <input
               id="pollDeadline"
               type="datetime-local"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               bind:value={pollDeadline}
-              on:focus={() => !pollDeadline && setPollDeadline()}
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              required
+              aria-required="true"
             />
           </div>
 
           <div class="flex items-center">
             <input
-              type="checkbox"
               id="autoFinalize"
+              type="checkbox"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               bind:checked={autoFinalize}
-              class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label for="autoFinalize" class="ml-2 text-sm text-gray-900">
+            >
+            <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
               Automatically finalize at deadline with most voted time
             </label>
           </div>
 
           <div class="flex items-center">
             <input
-              type="checkbox"
               id="notifyReminders"
+              type="checkbox"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               bind:checked={notifyReminders}
-              class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label for="notifyReminders" class="ml-2 text-sm text-gray-900">
+            >
+            <label for="notifyReminders" class="ml-2 block text-sm text-gray-900">
               Send reminders to friends who haven't voted
             </label>
           </div>
