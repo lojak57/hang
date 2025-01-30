@@ -2,5 +2,11 @@
   "framework": "sveltekit",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "devCommand": "npm run dev"
+  "devCommand": "npm run dev",
+  "version": 2,
+  "functions": {
+    "api/*": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
