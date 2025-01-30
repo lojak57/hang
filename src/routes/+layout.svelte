@@ -1,6 +1,6 @@
 <script>
   // Updated: 2025-01-29 - Trigger deployment
-  import '$lib/../app.css';
+  import '../app.css';
   import { currentUser } from '$lib/stores/currentUser';
 
   let user;

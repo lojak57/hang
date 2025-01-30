@@ -3,11 +3,17 @@
   import { goto } from '$app/navigation';
   import { addSuggestedHang } from '$lib/stores/hangStore';
   import { currentUser } from '$lib/stores/currentUser';
+  import { debounce } from 'lodash-es';
+  import { clickOutside } from '$lib/actions/clickOutside';
 
+  let searchQuery = '';
   let friends = [];
+  let filteredFriends = [];
+  let recentContacts = [];
   let groups = [];
   let selectedFriends = [];
   let selectedGroup = null;
+  let isComboboxOpen = false;
   let groupsExpanded = false;
   let individualsExpanded = false;
   let dateRange = { start: '', end: '' };
@@ -84,6 +90,42 @@
     }
   });
 
+  $: {
+    // Filter friends based on search query
+    filteredFriends = friends.filter(friend => 
+      friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    // Sort alphabetically
+    filteredFriends.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // Get first letter for indexing
+  function getFirstLetter(name) {
+    return name.charAt(0).toUpperCase();
+  }
+
+  // Group friends by first letter
+  $: groupedFriends = filteredFriends.reduce((acc, friend) => {
+    const letter = getFirstLetter(friend.name);
+    if (!acc[letter]) acc[letter] = [];
+    acc[letter].push(friend);
+    return acc;
+  }, {});
+
+  function toggleFriend(friend) {
+    const index = selectedFriends.indexOf(friend.id);
+    if (index === -1) {
+      selectedFriends = [...selectedFriends, friend.id];
+    } else {
+      selectedFriends = selectedFriends.filter(id => id !== friend.id);
+    }
+  }
+
+  function removeFriend(friendId) {
+    selectedFriends = selectedFriends.filter(id => id !== friendId);
+  }
+
   function selectGroup(group) {
     console.log('Selecting group:', group);
     if (selectedGroup?.id === group.id) {
@@ -97,18 +139,6 @@
       selectedFriends = memberIds;
     }
     groupsExpanded = false;
-  }
-
-  function toggleFriendSelection(friendId) {
-    console.log('Toggling friend:', friendId);
-    const index = selectedFriends.indexOf(friendId);
-    if (index === -1) {
-      selectedFriends = [...selectedFriends, friendId];
-    } else {
-      selectedFriends = selectedFriends.filter(id => id !== friendId);
-    }
-    // Clear selected group if manual selection
-    selectedGroup = null;
   }
 
   function normalizeDate(date) {
@@ -204,7 +234,7 @@
     if (suggestedSlots.length === 0) {
       alert('No available times found. Try selecting different dates or friends.');
     } else {
-      step = 2;
+      step = 4;
       selectedSlot = suggestedSlots[0];
     }
   }
@@ -261,20 +291,24 @@
         alert('Please select at least one friend');
         return;
       }
-      step = 1.5; // New naming step
-    } else if (step === 1.5) {
+      step = 2;
+    } else if (step === 2) {
+      if (!dateRange.start || !dateRange.end) {
+        alert('Please select a date range');
+        return;
+      }
+      step = 3;
+    } else if (step === 3) {
       if (!hangName.trim()) {
         alert('Please give your Hang a name');
         return;
       }
       findAvailableSlots();
-    } else if (step === 2) {
+    } else if (step === 4) {
       if (!selectedSlot) {
         alert('Please select a time slot');
         return;
       }
-      step = 3;
-    } else if (step === 3) {
       finalizeHang();
     }
   }
@@ -304,38 +338,49 @@
       return;
     }
 
-    if (!dateRange.start || !dateRange.end) {
-      alert('Please select a date range');
+    findAvailableSlots();
+  }
+
+  async function finalizeHang() {
+    if (!selectedSlot) {
+      alert('Please select a time slot');
       return;
     }
 
-    // Create the poll
-    const pollData = {
-      group: selectedGroup,
-      friends: selectedFriends,
-      dateRange,
-      duration,
-      autoFinalize
-    };
+    finalizing = true;
 
     try {
-      const response = await fetch('/api/polls', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(pollData)
-      });
+      // Create the hang object
+      const newHang = {
+        id: crypto.randomUUID(),
+        name: hangName,
+        description: hangDescription,
+        date: selectedSlot.date,
+        timeSlot: selectedSlot.time,
+        organizer: user.id,
+        participants: selectedFriends,
+        status: autoFinalize ? 'confirmed' : 'pending',
+        votes: selectedSlot.votes,
+        votedBy: selectedSlot.votedBy,
+        cannotMake: selectedSlot.cannotMake,
+        createdAt: new Date().toISOString()
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to create poll');
-      }
+      // Store in localStorage
+      const savedHangs = JSON.parse(localStorage.getItem('hangs') || '[]');
+      savedHangs.push(newHang);
+      localStorage.setItem('hangs', JSON.stringify(savedHangs));
 
-      const { id } = await response.json();
-      goto(`/polls/${id}`);
-    } catch (err) {
-      console.error('Error creating poll:', err);
-      alert('Failed to create poll. Please try again.');
+      // Add to suggested hangs store
+      addSuggestedHang(newHang);
+
+      // Redirect to calendar
+      goto('/calendar');
+    } catch (error) {
+      console.error('Error finalizing hang:', error);
+      alert('Failed to create hang. Please try again.');
+    } finally {
+      finalizing = false;
     }
   }
 
@@ -361,36 +406,6 @@
     
     return scoredSlots.sort((a, b) => b.finalScore - a.finalScore)[0];
   }
-
-  function finalizeHang() {
-    finalizing = true;
-    const recommendedSlot = getRecommendedSlot();
-    
-    // Save the Hang details
-    const hang = {
-      id: crypto.randomUUID(),
-      name: hangName,
-      description: hangDescription,
-      creator: localStorage.getItem('userId'),
-      group: selectedGroup,
-      friends: selectedFriends,
-      slots: suggestedSlots,
-      selectedSlot: recommendedSlot,
-      createdAt: new Date().toISOString(),
-      status: autoFinalize ? 'pending' : 'finalized',
-      autoFinalize
-    };
-    
-    // Save to localStorage
-    const hangs = JSON.parse(localStorage.getItem('hangs') || '[]');
-    hangs.push(hang);
-    localStorage.setItem('hangs', JSON.stringify(hangs));
-    
-    // Navigate to success page after short delay
-    setTimeout(() => {
-      goto('/hang/success');
-    }, 1000);
-  }
 </script>
 
 <div class="max-w-2xl mx-auto p-4">
@@ -407,219 +422,142 @@
   </div>
 
   {#if step === 1}
-    <div class="space-y-4 mb-8">
-      <!-- Groups Dropdown -->
-      <div class="relative">
-        <label for="groupsButton" class="block text-sm font-medium text-gray-700 mb-1">Groups</label>
-        <button
-          id="groupsButton"
-          type="button"
-          class="relative w-full bg-white border border-gray-300 rounded-lg shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          aria-haspopup="listbox"
-          aria-expanded={groupsExpanded}
-          on:click={() => groupsExpanded = !groupsExpanded}
-        >
-          <span class="block truncate">
-            {selectedGroup ? selectedGroup.name : 'Select a group'}
-          </span>
-        </button>
-
-        {#if groupsExpanded}
-          <div 
-            role="listbox"
-            class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
-            on:click|stopPropagation
-            on:keydown={e => {
-              if (e.key === 'Escape') groupsExpanded = false;
-            }}
-          >
-            <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
-              {#each groups as group}
-                <div
-                  class="flex items-center px-3 py-2 rounded hover:bg-gray-100 cursor-pointer"
-                  on:click={() => selectGroup(group)}
-                  role="option"
-                  aria-selected={selectedGroup?.id === group.id}
-                  data-value={group.id}
-                  tabindex="0"
-                >
-                  <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-900">{group.name}</div>
-                    <div class="text-sm text-gray-500">{group.members?.length || 0} members</div>
-                  </div>
-                  {#if selectedGroup?.id === group.id}
-                    <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </div>
-
-      <!-- Individual Friends -->
-      <div class="relative">
-        <label for="friendsButton" class="block text-sm font-medium text-gray-700 mb-1">Individual Friends</label>
-        <button
-          id="friendsButton"
-          type="button"
-          class="relative w-full bg-white border border-gray-300 rounded-lg shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          aria-haspopup="listbox"
-          aria-expanded={individualsExpanded}
-          on:click={() => individualsExpanded = !individualsExpanded}
-        >
-          <span class="block truncate">
-            {selectedFriends.length > 0 ? `${selectedFriends.length} friend${selectedFriends.length === 1 ? '' : 's'} selected` : 'Select friends'}
-          </span>
-        </button>
-
-        {#if individualsExpanded}
-          <div 
-            role="listbox"
-            class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
-            on:click|stopPropagation
-            on:keydown={e => {
-              if (e.key === 'Escape') individualsExpanded = false;
-            }}
-          >
-            <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
-              {#each friends as friend}
-                <label class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                  <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-900">{friend.name}</div>
-                    <div class="text-xs text-gray-500">{friend.name}</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={selectedFriends.includes(friend.id)}
-                    on:change={() => toggleFriendSelection(friend.id)}
-                    class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    data-value={friend.id}
-                  />
-                </label>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-      <h2 class="text-xl font-semibold mb-4">When would you like to Hang?</h2>
-      
-      <div class="space-y-4">
-        <div>
-          <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-          <input
-            id="startDate"
-            type="date"
-            bind:value={dateRange.start}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            required
-            aria-required="true"
-          />
-        </div>
-        
-        <div>
-          <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-          <input
-            id="endDate"
-            type="date"
-            bind:value={dateRange.end}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            required
-            aria-required="true"
-          />
-        </div>
-
-        <div>
-          <label for="duration" class="block text-sm font-medium text-gray-700 mb-1">How long do you want to Hang? (hours)</label>
-          <select
-            id="duration"
-            bind:value={duration}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            required
-            aria-required="true"
-          >
-            <option value="1">1 hour</option>
-            <option value="2">2 hours</option>
-            <option value="3">3 hours</option>
-            <option value="4">4 hours</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex justify-between items-center">
-      <a href="/friends" class="text-blue-600 hover:text-blue-700">
-        Add More Friends
-      </a>
-      <button
-        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        on:click={handleNext}
-        disabled={selectedFriends.length === 0}
-      >
-        Find Available Times
-      </button>
-    </div>
-  {:else if step === 1.5}
     <div class="space-y-6">
-      <h2 class="text-xl font-semibold mb-4">Name Your Hang</h2>
-      
-      <!-- Selected Friends Summary -->
-      <div class="bg-blue-50 p-4 rounded-lg mb-4">
-        <p class="text-sm text-blue-800">
-          {#if selectedGroup}
-            Planning a Hang with {selectedGroup.name}
-          {:else}
-            Planning a Hang with {selectedFriends.length} selected friend{selectedFriends.length === 1 ? '' : 's'}
-          {/if}
-        </p>
-      </div>
+      <h2 class="text-xl font-semibold mb-4">Who would you like to Hang with?</h2>
 
-      <!-- Name Input -->
-      <div class="space-y-4">
-        <div>
-          <label for="hangName" class="block text-sm font-medium text-gray-700 mb-1">
-            What should we call this Hang? *
-          </label>
-          <input
-            id="hangName"
-            type="text"
-            bind:value={hangName}
-            placeholder="e.g., Weekly Coffee, Game Night, Birthday Dinner"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      <!-- Selected Friends Tags -->
+      {#if selectedFriends.length > 0}
+        <div class="flex flex-wrap gap-2 mb-4">
+          {#each selectedFriends as friendId}
+            {#if friends.find(f => f.id === friendId)}
+              {@const friend = friends.find(f => f.id === friendId)}
+              <div class="inline-flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1">
+                <span>{friend.name}</span>
+                <button 
+                  class="ml-2 text-blue-600 hover:text-blue-800"
+                  on:click={() => removeFriend(friendId)}
+                >
+                  ×
+                </button>
+              </div>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Search Combobox -->
+      <div class="relative" use:clickOutside on:outclick={() => isComboboxOpen = false}>
+        <input
+          type="text"
+          bind:value={searchQuery}
+          placeholder="Search friends..."
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          on:focus={() => isComboboxOpen = true}
+          on:click={() => isComboboxOpen = true}
+        />
+        {#if searchQuery}
+          <button
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            on:click|stopPropagation={() => { 
+              searchQuery = ''; 
+              isComboboxOpen = false; 
+            }}
           >
-        </div>
+            ×
+          </button>
+        {/if}
 
-        <div>
-          <label for="hangDescription" class="block text-sm font-medium text-gray-700 mb-1">
-            Add a description (optional)
-          </label>
-          <textarea
-            id="hangDescription"
-            bind:value={hangDescription}
-            placeholder="e.g., Let's catch up over coffee! I found this new spot downtown."
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            rows="3"
-          ></textarea>
+        {#if isComboboxOpen}
+          <div 
+            class="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border max-h-96 overflow-auto"
+          >
+            <!-- Recent Contacts -->
+            {#if recentContacts.length > 0 && !searchQuery}
+              <div class="p-2">
+                <h3 class="text-xs font-semibold text-gray-500 mb-2">Recent</h3>
+                {#each recentContacts as friend}
+                  <button
+                    class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-md flex items-center justify-between"
+                    on:click|stopPropagation={() => {
+                      toggleFriend(friend);
+                      if (!searchQuery) isComboboxOpen = false;
+                    }}
+                  >
+                    <span>{friend.name}</span>
+                    {#if selectedFriends.includes(friend.id)}
+                      <span class="text-blue-600">✓</span>
+                    {/if}
+                  </button>
+                {/each}
+                <div class="border-b my-2"></div>
+              </div>
+            {/if}
+
+            <!-- Alphabetical Groups -->
+            {#each Object.entries(groupedFriends) as [letter, letterFriends]}
+              <div class="relative">
+                <div class="sticky top-0 bg-gray-50 px-4 py-1 text-xs font-semibold text-gray-500">
+                  {letter}
+                </div>
+                {#each letterFriends as friend}
+                  <button
+                    class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center justify-between"
+                    on:click|stopPropagation={() => {
+                      toggleFriend(friend);
+                      if (!searchQuery) isComboboxOpen = false;
+                    }}
+                  >
+                    <span>{friend.name}</span>
+                    {#if selectedFriends.includes(friend.id)}
+                      <span class="text-blue-600">✓</span>
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            {/each}
+
+            {#if filteredFriends.length === 0}
+              <div class="p-4 text-center text-gray-500">
+                No friends found
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Groups Section -->
+      <div class="mt-6">
+        <h3 class="text-lg font-medium mb-3">Or select a group</h3>
+        <div class="space-y-2">
+          {#each groups as group}
+            <button
+              class="w-full text-left px-4 py-3 border rounded-lg hover:bg-gray-50 flex items-center justify-between"
+              class:bg-blue-50={selectedGroup?.id === group.id}
+              on:click={() => selectGroup(group)}
+            >
+              <div>
+                <span class="font-medium">{group.name}</span>
+                <p class="text-sm text-gray-500">{group.members.length} members</p>
+              </div>
+              {#if selectedGroup?.id === group.id}
+                <span class="text-blue-600">✓</span>
+              {/if}
+            </button>
+          {/each}
         </div>
       </div>
 
-      <!-- Navigation -->
       <div class="flex justify-between mt-8">
-        <button
-          class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          on:click={() => step = 1}
+        <button 
+          class="px-6 py-2 text-gray-600 hover:text-gray-800"
+          on:click={() => goto('/')}
         >
           Back
         </button>
         <button
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          on:click={handleNext}
-          disabled={!hangName.trim()}
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={selectedFriends.length === 0 && !selectedGroup}
+          on:click={() => step = 2}
         >
           Next
         </button>
@@ -627,151 +565,189 @@
     </div>
   {:else if step === 2}
     <div class="space-y-6">
-      <h2 class="text-xl font-semibold mb-4">Vote for a Time</h2>
+      <h2 class="text-xl font-semibold mb-4">When would you like to Hang?</h2>
       
-      <!-- Selected Group Summary -->
-      <div class="bg-blue-50 p-4 rounded-lg mb-4">
-        <p class="text-sm text-blue-800">
-          {#if selectedGroup}
-            Top 3 times for {selectedGroup.name}
-          {:else}
-            Top 3 times for {selectedFriends.length} selected friend{selectedFriends.length === 1 ? '' : 's'}
-          {/if}
-        </p>
-      </div>
-
-      <!-- Available Slots -->
-      <div class="grid grid-cols-1 gap-6">
-        {#each suggestedSlots as slot}
-          <div class="bg-white rounded-lg border p-4 relative {slot.cannotMake.includes(localStorage.getItem('userId')) ? 'opacity-50' : ''}">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-medium text-gray-900">{formatDate(slot.date)}</div>
-                <div class="text-gray-600">{getTimeSlotLabel(slot.time)}</div>
-                <div class="text-sm text-gray-500 mt-1">
-                  {slot.availableCount} available • {slot.maybeCount} maybe
-                </div>
-              </div>
-              <div class="flex items-center space-x-4">
-                <button
-                  class="flex items-center space-x-2 px-4 py-2 {hasVoted(slot) ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800'} rounded-lg hover:opacity-80 transition-colors"
-                  on:click={() => vote(slot)}
-                >
-                  <span>👍</span>
-                  <span>{slot.votes}</span>
-                </button>
-                <button
-                  class="flex items-center space-x-2 px-4 py-2 {slot.cannotMake.includes(localStorage.getItem('userId')) ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-800'} rounded-lg hover:opacity-80 transition-colors"
-                  on:click={() => cannotMake(slot)}
-                >
-                  {#if slot.cannotMake.includes(localStorage.getItem('userId'))}
-                    <span>✕</span>
-                  {:else}
-                    <span>Can't make it</span>
-                  {/if}
-                </button>
-              </div>
-            </div>
-            {#if slot.cannotMake.length > 0}
-              <div class="text-sm text-red-500 mt-2">
-                {slot.cannotMake.length} people can't make this time
-              </div>
-            {/if}
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="space-y-4">
+          <div>
+            <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+            <input
+              type="date"
+              id="startDate"
+              bind:value={dateRange.start}
+              min={new Date().toISOString().split('T')[0]}
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
           </div>
-        {/each}
+
+          <div>
+            <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+            <input
+              type="date"
+              id="endDate"
+              bind:value={dateRange.end}
+              min={dateRange.start}
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+          </div>
+
+          <div>
+            <label for="duration" class="block text-sm font-medium text-gray-700">How long do you want to Hang? (hours)</label>
+            <select
+              id="duration"
+              bind:value={duration}
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="1">1 hour</option>
+              <option value="2">2 hours</option>
+              <option value="3">3 hours</option>
+              <option value="4">4 hours</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="flex justify-between mt-8">
+      <div class="mt-6 flex justify-between">
         <button
-          class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          on:click={() => step = 1.5}
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          on:click={() => step = 1}
         >
           Back
         </button>
         <button
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           on:click={handleNext}
-          disabled={suggestedSlots.every(slot => slot.cannotMake.includes(localStorage.getItem('userId')))}
+          disabled={!dateRange.start || !dateRange.end}
         >
           Next
         </button>
       </div>
     </div>
+
   {:else if step === 3}
     <div class="space-y-6">
-      <h2 class="text-xl font-semibold mb-4">Finalize the Hang</h2>
-      
-      <!-- Summary Card -->
-      <div class="bg-white rounded-lg border p-6 space-y-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <h3 class="font-medium text-gray-900">
-              {selectedGroup ? selectedGroup.name : `Hang with ${selectedFriends.length} friends`}
-            </h3>
-            <p class="text-sm text-gray-500">Based on votes and availability</p>
-          </div>
-          {#if finalizing}
-            <div class="animate-pulse text-blue-600">
-              Finalizing Hang...
-            </div>
-          {/if}
-        </div>
+      <h2 class="text-xl font-semibold mb-4">Name Your Hang</h2>
 
-        <!-- Recommended Time -->
-        {#if getRecommendedSlot()}
-          {@const recommended = getRecommendedSlot()}
-          <div class="bg-green-50 rounded-lg p-4 mt-4">
-            <div class="flex items-start">
-              <div class="flex-shrink-0">
-                <span class="text-green-400 text-xl">✨</span>
-              </div>
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-green-800">
-                  Recommended Time
-                </h3>
-                <div class="mt-2 text-sm text-green-700">
-                  <p class="font-medium">{formatDate(recommended.date)}</p>
-                  <p>{getTimeSlotLabel(recommended.time)}</p>
-                  <div class="mt-1 text-sm">
-                    <span class="text-green-600">{recommended.votes} votes</span>
-                    {#if recommended.cannotMake.length}
-                      <span class="text-red-600"> • {recommended.cannotMake.length} can't make it</span>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Poll Settings -->
-        <div class="space-y-4 pt-4">
-          <div class="flex items-center">
-            <input
-              id="autoFinalize"
-              type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              bind:checked={autoFinalize}
+      <!-- Quick Suggestions -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Quick Suggestions</label>
+        <div class="flex flex-wrap gap-2">
+          {#each ['Coffee Break ☕', 'Lunch Meetup 🍽️', 'Game Night 🎮', 'Movie Night 🎬', 'Study Session 📚', 'Happy Hour 🍻'] as suggestion}
+            <button
+              type="button"
+              class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              on:click={() => hangName = suggestion}
             >
-            <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
-              Automatically finalize at deadline with most voted time
-            </label>
-          </div>
+              {suggestion}
+            </button>
+          {/each}
         </div>
       </div>
 
-      <!-- Navigation -->
-      <div class="flex justify-between mt-8">
+      <!-- Custom Name Input -->
+      <div>
+        <label for="hangName" class="block text-sm font-medium text-gray-700">Custom Name</label>
+        <input
+          type="text"
+          id="hangName"
+          bind:value={hangName}
+          placeholder="Give your hang a name"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        >
+      </div>
+
+      <!-- Description (Optional) -->
+      <div>
+        <label for="hangDescription" class="block text-sm font-medium text-gray-700">
+          Description (Optional)
+        </label>
+        <textarea
+          id="hangDescription"
+          bind:value={hangDescription}
+          rows="3"
+          placeholder="Add any additional details..."
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        ></textarea>
+      </div>
+
+      <div class="mt-6 flex justify-between">
         <button
-          class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           on:click={() => step = 2}
         >
           Back
         </button>
         <button
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          on:click={handleSubmit}
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          on:click={handleNext}
+          disabled={!hangName.trim()}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+  {:else if step === 4}
+    <div class="space-y-6">
+      <h2 class="text-xl font-semibold mb-4">Vote for a Time</h2>
+      
+      <!-- Time Slots -->
+      <div class="space-y-4">
+        {#each suggestedSlots as slot}
+          <div class="bg-white shadow rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium">{formatDate(slot.date)}</p>
+                <p class="text-gray-600">{getTimeSlotLabel(slot.time)}</p>
+              </div>
+              <div class="flex space-x-2">
+                <button
+                  class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md {hasVoted(slot) ? 'text-white bg-green-600' : 'text-gray-700 bg-gray-100'} hover:bg-opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  on:click={() => vote(slot)}
+                >
+                  👍 {slot.votes}
+                </button>
+                <button
+                  class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md {slot.cannotMake.includes(user.id) ? 'text-white bg-red-600' : 'text-gray-700 bg-gray-100'} hover:bg-opacity-75 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  on:click={() => cannotMake(slot)}
+                >
+                  👎
+                </button>
+              </div>
+            </div>
+          </div>
+        {/each}
+      </div>
+
+      <!-- Auto-finalize Option -->
+      <div class="flex items-center">
+        <input
+          type="checkbox"
+          id="autoFinalize"
+          bind:checked={autoFinalize}
+          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+        >
+        <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
+          Automatically finalize with most voted time
+        </label>
+      </div>
+
+      <div class="mt-6 flex justify-between">
+        <button
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          on:click={() => step = 3}
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          on:click={finalizeHang}
           disabled={finalizing}
         >
           {finalizing ? 'Creating Hang...' : 'Create Hang'}
@@ -779,4 +755,19 @@
       </div>
     </div>
   {/if}
+
+  <!-- Progress Indicator -->
+  <div class="mt-8">
+    <div class="flex justify-center items-center space-x-4">
+      {#each ['Select Friends', 'Pick Dates', 'Name It', 'Vote Time'] as label, i}
+        <div class="flex flex-col items-center">
+          <div class="w-2.5 h-2.5 rounded-full {step === i + 1 ? 'bg-indigo-600' : 'bg-gray-300'} mb-2"></div>
+          <span class="text-xs text-gray-600 {step === i + 1 ? 'font-medium' : ''}">{label}</span>
+        </div>
+        {#if i < 3}
+          <div class="w-8 h-0.5 bg-gray-300"></div>
+        {/if}
+      {/each}
+    </div>
+  </div>
 </div>
