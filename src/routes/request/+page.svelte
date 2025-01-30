@@ -808,24 +808,24 @@
 
           <div class="flex items-center">
             <input
-              id="autoFinalize"
+              id="autoFinalize-step3"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               bind:checked={autoFinalize}
             >
-            <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
+            <label for="autoFinalize-step3" class="ml-2 block text-sm text-gray-900">
               Automatically finalize at deadline with most voted time
             </label>
           </div>
 
           <div class="flex items-center">
             <input
-              id="notifyReminders"
+              id="notifyReminders-step3"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               bind:checked={notifyReminders}
             >
-            <label for="notifyReminders" class="ml-2 block text-sm text-gray-900">
+            <label for="notifyReminders-step3" class="ml-2 block text-sm text-gray-900">
               Send reminders to friends who haven't voted
             </label>
           </div>
@@ -912,24 +912,24 @@
 
           <div class="flex items-center">
             <input
-              id="autoFinalize"
+              id="autoFinalize-step4"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               bind:checked={autoFinalize}
             >
-            <label for="autoFinalize" class="ml-2 block text-sm text-gray-900">
+            <label for="autoFinalize-step4" class="ml-2 block text-sm text-gray-900">
               Automatically finalize at deadline with most voted time
             </label>
           </div>
 
           <div class="flex items-center">
             <input
-              id="notifyReminders"
+              id="notifyReminders-step4"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               bind:checked={notifyReminders}
             >
-            <label for="notifyReminders" class="ml-2 block text-sm text-gray-900">
+            <label for="notifyReminders-step4" class="ml-2 block text-sm text-gray-900">
               Send reminders to friends who haven't voted
             </label>
           </div>
