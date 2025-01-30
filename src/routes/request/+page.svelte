@@ -3,7 +3,6 @@
   import { goto } from '$app/navigation';
   import { addSuggestedHang } from '$lib/stores/hangStore';
   import { currentUser } from '$lib/stores/currentUser';
-  import { sendHangRequestEmail } from '$lib/emailService';
 
   let friends = [];
   let groups = [];
@@ -24,8 +23,8 @@
   let user;
   let duration = '2'; // hours
   let pollDeadline = '';
-  let autoFinalize = true;
-  let notifyReminders = true;
+  let autoFinalize = false;
+  let notifyReminders = false;
   let finalizing = false;
   let hangName = '';
   let hangDescription = '';
@@ -302,66 +301,47 @@
     });
   }
 
-  async function sendInvites() {
-    isSending = true;
-    emailStatus = '';
-    
-    if (!selectedSlot || !activity || !location) {
-      emailStatus = 'Please fill in all required fields';
-      isSending = false;
+  async function handleSubmit() {
+    // Validate selections
+    if (!selectedGroup && selectedFriends.length === 0) {
+      alert('Please select at least one friend or group');
       return;
     }
 
-    const hang = {
-      title: activity,
-      date: selectedSlot.date,
-      time: selectedSlot.time,
-      location,
-      locationDetails,
-      activity,
-      description,
-      participants: [
-        {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          status: 'confirmed'  // Creator is automatically confirmed
-        },
-        ...selectedFriends.map(friend => ({
-          id: friend.id,
-          name: friend.name,
-          email: friend.email,
-          status: 'pending'
-        }))
-      ]
+    if (!dateRange.start || !dateRange.end) {
+      alert('Please select a date range');
+      return;
+    }
+
+    // Create the poll
+    const pollData = {
+      group: selectedGroup,
+      friends: selectedFriends,
+      dateRange,
+      duration,
+      pollDeadline,
+      autoFinalize
     };
 
-    // Add to suggested hangs
-    addSuggestedHang(hang);
-    
-    // Send email to each selected friend
-    for (const friend of selectedFriends) {
-      const result = await sendHangRequestEmail(
-        friend.email,
-        'Your Name', // We can make this configurable later
-        [selectedSlot],
-        `${window.location.origin}/hub`
-      );
-      
-      if (!result.success) {
-        emailStatus = `Failed to send invite to ${friend.email}: ${result.error}`;
-        isSending = false;
-        return;
+    try {
+      const response = await fetch('/api/polls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pollData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create poll');
       }
+
+      const { id } = await response.json();
+      goto(`/polls/${id}`);
+    } catch (err) {
+      console.error('Error creating poll:', err);
+      alert('Failed to create poll. Please try again.');
     }
-    
-    emailStatus = 'Hang request created and invites sent successfully!';
-    isSending = false;
-    
-    // Redirect to hub after a short delay
-    setTimeout(() => {
-      goto('/hub');
-    }, 2000);
   }
 
   function getRecommendedSlot() {
@@ -862,112 +842,7 @@
         </button>
         <button
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          on:click={finalizeHang}
-          disabled={!pollDeadline || finalizing}
-        >
-          {finalizing ? 'Creating Hang...' : 'Create Hang'}
-        </button>
-      </div>
-    </div>
-  {:else if step === 4}
-    <div class="space-y-6">
-      <h2 class="text-xl font-semibold mb-4">Finalize the Hang</h2>
-      
-      <!-- Summary Card -->
-      <div class="bg-white rounded-lg border p-6 space-y-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <h3 class="font-medium text-gray-900">
-              {selectedGroup ? selectedGroup.name : `Hang with ${selectedFriends.length} friends`}
-            </h3>
-            <p class="text-sm text-gray-500">Based on votes and availability</p>
-          </div>
-          {#if finalizing}
-            <div class="animate-pulse text-blue-600">
-              Finalizing Hang...
-            </div>
-          {/if}
-        </div>
-
-        <!-- Recommended Time -->
-        {#if getRecommendedSlot()}
-          {@const recommended = getRecommendedSlot()}
-          <div class="bg-green-50 rounded-lg p-4 mt-4">
-            <div class="flex items-start">
-              <div class="flex-shrink-0">
-                <span class="text-green-400 text-xl">✨</span>
-              </div>
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-green-800">
-                  Recommended Time
-                </h3>
-                <div class="mt-2 text-sm text-green-700">
-                  <p class="font-medium">{formatDate(recommended.date)}</p>
-                  <p>{getTimeSlotLabel(recommended.time)}</p>
-                  <div class="mt-1 text-sm">
-                    <span class="text-green-600">{recommended.votes} votes</span>
-                    {#if recommended.cannotMake.length}
-                      <span class="text-red-600"> • {recommended.cannotMake.length} can't make it</span>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <!-- Poll Settings -->
-        <div class="space-y-4 pt-4">
-          <div>
-            <label for="pollDeadline" class="block text-sm font-medium text-gray-700 mb-1">
-              Poll Deadline
-            </label>
-            <input
-              id="pollDeadline"
-              type="datetime-local"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              bind:value={pollDeadline}
-              on:focus={() => !pollDeadline && setPollDeadline()}
-            >
-          </div>
-
-          <div class="flex items-center">
-            <input
-              id="autoFinalize-step4"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
-              bind:checked={autoFinalize}
-            >
-            <label for="autoFinalize-step4" class="ml-2 block text-sm text-gray-900">
-              Automatically finalize at deadline with most voted time
-            </label>
-          </div>
-
-          <div class="flex items-center">
-            <input
-              id="notifyReminders-step4"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
-              bind:checked={notifyReminders}
-            >
-            <label for="notifyReminders-step4" class="ml-2 block text-sm text-gray-900">
-              Send reminders to friends who haven't voted
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Navigation -->
-      <div class="flex justify-between mt-8">
-        <button
-          class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          on:click={() => step = 2}
-        >
-          Back
-        </button>
-        <button
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          on:click={finalizeHang}
+          on:click={handleSubmit}
           disabled={!pollDeadline || finalizing}
         >
           {finalizing ? 'Creating Hang...' : 'Create Hang'}
