@@ -451,6 +451,8 @@
             groupsExpanded = !groupsExpanded;
             individualsExpanded = false; // Close other dropdown
           }}
+          aria-haspopup="true"
+          aria-expanded={groupsExpanded}
         >
           <div class="flex items-center">
             <span class="text-sm font-medium text-gray-900 mr-2">Groups</span>
@@ -477,8 +479,11 @@
 
         {#if groupsExpanded}
           <div 
+            role="listbox"
+            tabindex="0"
             class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
+            on:keydown={e => e.key === 'Escape' && (groupsExpanded = false)}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each groups as group}
@@ -486,6 +491,8 @@
                   type="button"
                   class="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg {selectedGroup?.id === group.id ? 'bg-blue-50' : ''}"
                   on:click|stopPropagation={() => selectGroup(group)}
+                  role="option"
+                  aria-selected={selectedGroup?.id === group.id}
                 >
                   <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">{group.name}</div>
@@ -512,6 +519,8 @@
             individualsExpanded = !individualsExpanded;
             groupsExpanded = false; // Close other dropdown
           }}
+          aria-haspopup="true"
+          aria-expanded={individualsExpanded}
         >
           <div class="flex items-center">
             <span class="text-sm font-medium text-gray-900 mr-2">Individuals</span>
@@ -538,8 +547,11 @@
 
         {#if individualsExpanded}
           <div 
+            role="listbox"
+            tabindex="0"
             class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg"
             on:click|stopPropagation
+            on:keydown={e => e.key === 'Escape' && (individualsExpanded = false)}
           >
             <div class="p-2 space-y-1 max-h-60 overflow-y-auto">
               {#each friends as friend}
@@ -567,26 +579,29 @@
       
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
           <input
+            id="startDate"
             type="date"
             bind:value={dateRange.start}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-          >
+          />
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
           <input
+            id="endDate"
             type="date"
             bind:value={dateRange.end}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-          >
+          />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">How long do you want to Hang? (hours)</label>
+          <label for="hangDuration" class="block text-sm font-medium text-gray-700 mb-1">How long do you want to Hang? (hours)</label>
           <select
+            id="hangDuration"
             bind:value={duration}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           >
@@ -795,10 +810,11 @@
         <!-- Poll Settings -->
         <div class="space-y-4 pt-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="pollDeadline" class="block text-sm font-medium text-gray-700 mb-1">
               Poll Deadline
             </label>
             <input
+              id="pollDeadline"
               type="datetime-local"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               bind:value={pollDeadline}
@@ -899,10 +915,11 @@
         <!-- Poll Settings -->
         <div class="space-y-4 pt-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="pollDeadline" class="block text-sm font-medium text-gray-700 mb-1">
               Poll Deadline
             </label>
             <input
+              id="pollDeadline"
               type="datetime-local"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               bind:value={pollDeadline}

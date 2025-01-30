@@ -106,8 +106,11 @@
     <div class="grid grid-cols-1 gap-6 mb-8">
       {#each groups as group}
         <div
+          role="button"
+          tabindex="0"
           class="relative bg-white rounded-lg border border-gray-200 p-6 hover:border-blue-500 cursor-pointer transition-colors duration-200"
           on:click={() => handleGroupClick(group)}
+          on:keydown={e => e.key === 'Enter' && handleGroupClick(group)}
         >
           <div class="flex justify-between items-start mb-4">
             <div>
@@ -166,28 +169,29 @@
       
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
+          <label for="groupName" class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
           <input
+            id="groupName"
             type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             bind:value={newGroupName}
-            placeholder="e.g., College Friends, Work Crew"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            required
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+          <label for="groupDesc" class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
           <input
+            id="groupDesc"
             type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
             bind:value={newGroupDescription}
-            placeholder="e.g., Friends from university"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <label for="groupFriends" class="block text-sm font-medium text-gray-700 mb-2">Select Friends</label>
+          <div id="groupFriends" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {#each friends as friend}
               <label class="relative flex items-center py-2 cursor-pointer hover:bg-gray-50 rounded-lg px-3">
                 <div class="flex items-center h-5">

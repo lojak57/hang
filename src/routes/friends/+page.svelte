@@ -150,37 +150,39 @@
     <h2 class="text-xl font-semibold mb-4">Add a Friend</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friendName" class="block text-sm font-medium text-gray-700 mb-1">
           Name <span class="text-red-500">*</span>
         </label>
         <input
+          id="friendName"
           type="text"
           bind:value={newFriendName}
-          placeholder="Friend's name"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-        >
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          required
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friendPhone" class="block text-sm font-medium text-gray-700 mb-1">
           Phone Number <span class="text-red-500">*</span>
         </label>
         <input
+          id="friendPhone"
           type="tel"
           bind:value={newFriendPhone}
-          placeholder="(123) 456-7890"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-        >
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          required
+        />
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friendEmail" class="block text-sm font-medium text-gray-700 mb-1">
           Email (optional)
         </label>
         <input
+          id="friendEmail"
           type="email"
           bind:value={newFriendEmail}
-          placeholder="friend@example.com"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-        >
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
     </div>
     {#if formError}
@@ -293,36 +295,39 @@
 
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editName" class="block text-sm font-medium text-gray-700 mb-1">
             Name <span class="text-red-500">*</span>
           </label>
           <input
+            id="editName"
             type="text"
             bind:value={editingFriend.name}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editPhone" class="block text-sm font-medium text-gray-700 mb-1">
             Phone Number <span class="text-red-500">*</span>
           </label>
           <input
+            id="editPhone"
             type="tel"
             bind:value={editingFriend.phone}
-            placeholder="(123) 456-7890"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1">
             Email (optional)
           </label>
           <input
+            id="editEmail"
             type="email"
             bind:value={editingFriend.email}
-            placeholder="friend@example.com"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
       </div>
 
