@@ -4,9 +4,7 @@ import adapter from '@sveltejs/adapter-vercel';
 const config = {
 	kit: {
 		adapter: adapter({
-			runtime: 'nodejs18.x',
-			split: true,
-			edge: false
+			runtime: 'nodejs18.x'
 		}),
 		alias: {
 			$lib: './src/lib'
