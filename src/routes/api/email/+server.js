@@ -1,12 +1,20 @@
 import { json } from '@sveltejs/kit';
 import sgMail from '@sendgrid/mail';
 import { SENDGRID_API_KEY } from '$env/static/private';
+import { dev } from '$app/environment';
 
 const VERIFIED_SENDER = 'mitch.mechelay57@icloud.com';
 
 /** @type {import('./$types').RequestHandler} */
 export async function POST({ request }) {
-    sgMail.setApiKey(SENDGRID_API_KEY);
+    // Use environment variable directly in production
+    const apiKey = dev ? SENDGRID_API_KEY : process.env.SENDGRID_API_KEY;
+    if (!apiKey) {
+        console.error('SendGrid API key not found');
+        return json({ error: 'Email service not configured' }, { status: 500 });
+    }
+    
+    sgMail.setApiKey(apiKey);
     
     try {
         const { type, to, fromName, shareUrl, selectedTimes, requestUrl } = await request.json();
