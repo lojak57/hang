@@ -130,11 +130,11 @@
     <h2 class="text-xl font-semibold mb-4">Add a Friend</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label for="newFriendName" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friend-name-input" class="block text-sm font-medium text-gray-700 mb-1">
           Name <span class="text-red-500">*</span>
         </label>
         <input
-          id="newFriendName"
+          id="friend-name-input"
           type="text"
           bind:value={newFriendName}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -143,11 +143,11 @@
         />
       </div>
       <div>
-        <label for="newFriendPhone" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friend-phone-input" class="block text-sm font-medium text-gray-700 mb-1">
           Phone Number <span class="text-red-500">*</span>
         </label>
         <input
-          id="newFriendPhone"
+          id="friend-phone-input"
           type="tel"
           bind:value={newFriendPhone}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -156,11 +156,11 @@
         />
       </div>
       <div>
-        <label for="newFriendEmail" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="friend-email-input" class="block text-sm font-medium text-gray-700 mb-1">
           Email (optional)
         </label>
         <input
-          id="newFriendEmail"
+          id="friend-email-input"
           type="email"
           bind:value={newFriendEmail}
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"

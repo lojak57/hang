@@ -1,10 +1,14 @@
-import { json } from '@sveltejs/kit';
-
 // Email functionality temporarily disabled
-export async function POST({ request }) {
-    console.log('Email endpoint called - functionality temporarily disabled');
-    return json({
-        success: true,
-        message: 'Email functionality temporarily disabled'
-    });
+export async function POST() {
+    return new Response(
+        JSON.stringify({
+            success: true,
+            message: 'Email functionality temporarily disabled'
+        }),
+        {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+    );
 }
